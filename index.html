@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Melodia</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Melodia">
+  <meta name="theme-color" content="#26473e">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="phone.css">
+</head>
+<body class="phone">
+  <div id="ambient"></div>
+  <div id="npBackdrop"></div>
+
+  <div id="layout">
+    <aside id="sidebar">
+      <nav class="card nav" id="nav"></nav>
+      <section class="card library">
+        <div class="lib-head">
+          <button class="lib-title" data-go="library"><span data-icon="library"></span>Моя медиатека</button>
+          <button class="icon-btn" id="newPlaylistBtn" title="Создать плейлист"><span data-icon="add"></span></button>
+        </div>
+        <div class="lib-list" id="libList"></div>
+      </section>
+    </aside>
+
+    <main id="main" class="card">
+      <div id="topbar">
+        <div class="hist">
+          <button class="round" id="backBtn" title="Назад"><span data-icon="back"></span></button>
+          <button class="round" id="fwdBtn" title="Вперёд"><span data-icon="fwd"></span></button>
+          <button class="round" id="sideBtn" title="Свернуть панель"><span data-icon="sidebar"></span></button>
+        </div>
+        <label class="search-box hidden" id="searchBox"><span data-icon="search"></span><input id="searchInput" type="search" placeholder="Название, исполнитель, альбом" spellcheck="false" autocomplete="off" autocapitalize="off"><button class="icon-btn hidden" id="searchClear" title="Очистить"><span data-icon="close"></span></button></label>
+        <button class="round" id="addTopBtn" title="Добавить музыку"><span data-icon="add"></span></button>
+      </div>
+      <div id="view"></div>
+    </main>
+  </div>
+
+  <footer id="player">
+    <div class="np">
+      <div class="np-cover" id="npCover"></div>
+      <div class="np-meta">
+        <div class="np-title" id="npTitle"></div>
+        <div class="np-artist" id="npArtist"></div>
+      </div>
+      <button class="icon-btn like" id="npLike" title="Добавить в любимые"><span data-icon="heart"></span></button>
+    </div>
+    <div class="controls">
+      <div class="ctrl-btns">
+        <button class="icon-btn" id="shuffleBtn" title="Перемешать"><span data-icon="shuffle"></span></button>
+        <button class="icon-btn" id="prevBtn" title="Назад"><span data-icon="prev"></span></button>
+        <button class="play-btn" id="playBtn" title="Играть"><span data-icon="play"></span></button>
+        <button class="icon-btn" id="nextBtn" title="Далее"><span data-icon="next"></span></button>
+        <button class="icon-btn" id="repeatBtn" title="Повтор"><span data-icon="repeat"></span></button>
+      </div>
+      <div class="progress">
+        <span id="curTime">0:00</span>
+        <div class="slider" id="seek"><canvas class="wf"></canvas><div class="fill"></div><div class="buf"></div><div class="knob"></div></div>
+        <span id="durTime">0:00</span>
+      </div>
+    </div>
+    <div class="extras">
+      <button class="icon-btn" id="lyricsBtn" title="Текст песни"><span data-icon="lyrics"></span></button>
+      <button class="icon-btn" id="eqBtn" title="Эквалайзер"><span data-icon="eq"></span></button>
+      <button class="icon-btn" id="queueBtn" title="Очередь"><span data-icon="queue"></span></button>
+      <button class="icon-btn" id="muteBtn" title="Звук"><span data-icon="volume"></span></button>
+      <div class="slider vol" id="volume"><div class="fill"></div><div class="knob"></div></div>
+      <button class="icon-btn" id="closePlayerBtn" title="Закрыть плеер"><span data-icon="close"></span></button>
+    </div>
+  </footer>
+
+  <nav id="tabbar"></nav>
+
+  <input type="file" id="fileInput" accept="audio/*,.mp3,.m4a,.aac,.flac,.wav,.ogg,.opus" multiple hidden>
+  <div id="ctxMenu" class="menu hidden"></div>
+  <div id="modal" class="modal hidden"></div>
+  <div id="toasts"></div>
+
+  <script src="jsmediatags.min.js"></script>
+  <script src="shim.js"></script>
+  <script src="icons.js"></script>
+  <script src="eq.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,232 @@
+/* =====================================================================
+   iPhone layout on top of the desktop styles: the same glass look,
+   one column, tabs at the bottom, a mini player above them and the
+   big player as a full screen with all controls.
+   ===================================================================== */
+:root {
+  --font: -apple-system, "SF Pro Text", system-ui, sans-serif;
+  --font-display: -apple-system, "SF Pro Display", system-ui, sans-serif;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: 56px;
+}
+html, body { height: 100%; overscroll-behavior: none; }
+body.phone {
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-text-size-adjust: 100%;
+}
+body.phone.player-closed { grid-template-rows: minmax(0, 1fr) 0 auto; }
+input, textarea { user-select: text; -webkit-user-select: text; }
+.ic { pointer-events: none; }
+
+/* ---------- layout: no title bar, no sidebar ---------- */
+#titlebar, #sidebar { display: none !important; }
+#layout { display: block; padding: 0; min-height: 0; }
+#main { height: 100%; border-radius: 0; border: 0; background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+#view { -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+#view::-webkit-scrollbar { display: none; }
+
+#topbar { height: calc(52px + var(--safe-top)); padding: var(--safe-top) 14px 0; gap: 10px; border-radius: 0; }
+#topbar.solid { border-bottom: 1px solid var(--glass-border); }
+#fwdBtn, #sideBtn { display: none !important; }
+#backBtn { width: 36px; height: 36px; }
+#backBtn:disabled { visibility: hidden; }
+#addTopBtn { width: 36px; height: 36px; margin-left: auto; flex: none; }
+#topbar .search-box { flex: 1; width: auto; height: 40px; min-width: 0; }
+#topbar .search-box input { font-size: 16px; } /* 16px keeps iOS from zooming in */
+#topbar .search-box input::-webkit-search-cancel-button { display: none; }
+.page { padding: calc(60px + var(--safe-top)) 16px 28px; }
+h1.page-title { font-size: 30px; margin: 4px 0 18px; }
+h2.sec { font-size: 20px; margin: 26px 0 12px; }
+
+/* ---------- home ---------- */
+.quick { grid-template-columns: 1fr 1fr; gap: 8px; }
+.quick-item { height: 56px; border-radius: 12px; gap: 10px; }
+.quick-item .cv { width: 56px; height: 56px; }
+.quick-item .tt { font-size: 13px; padding-right: 8px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.25; }
+.quick-item .fab { display: none; }
+.cards { display: flex; overflow-x: auto; gap: 4px; margin: 0 -16px; padding: 0 10px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.cards::-webkit-scrollbar { display: none; }
+.tcard { flex: 0 0 148px; padding: 6px; scroll-snap-align: start; }
+.tcard .fab { display: none; }
+.home-bg { height: 260px; }
+
+/* ---------- track rows: cover + title, like, more ---------- */
+.tl-head { display: none !important; }
+.tr, .tl.no-album .tr, .home-list .tr {
+  grid-template-columns: minmax(0, 1fr) 36px 36px; gap: 4px; height: 60px; padding: 0 0 0 6px; margin: 0 -6px;
+}
+.tr .num, .tr .col-album, .tr .dur, .tr > div:empty { display: none; }
+.tr .ti { gap: 12px; }
+.tr .ti .cv { width: 46px; height: 46px; }
+.tr .tt { font-size: 16px; }
+.tr .ar { font-size: 13.5px; }
+.tr .likebtn, .tr .morebtn { visibility: visible !important; width: 36px; height: 36px; }
+.tr .likebtn:not(.on) { display: none; }
+.tr, .tr.live { grid-template-columns: minmax(0, 1fr) auto 36px; }
+.tr:hover { background: none; }
+.tr:active { background: var(--hover); }
+.tr.playing .tt { color: var(--accent); }
+.tr.playing.live .ti .cv { position: relative; }
+.tr.playing.live .ti .cv::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: rgba(0,0,0,.35) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Crect x='4' y='9' width='3' height='9' rx='1'/%3E%3Crect x='10.5' y='5' width='3' height='13' rx='1'/%3E%3Crect x='17' y='11' width='3' height='7' rx='1'/%3E%3C/svg%3E") center/50% no-repeat; }
+
+/* ---------- list pages ---------- */
+.hero { flex-direction: column; align-items: center; text-align: center; gap: 16px; padding: calc(64px + var(--safe-top)) 16px 16px; }
+.hero .cv { width: min(58vw, 240px); height: min(58vw, 240px); }
+.hero h1 { font-size: 30px !important; letter-spacing: -.5px; margin: 0 0 6px; }
+.hero .kind { display: none; }
+.page-body { padding: 0 16px 28px; }
+.actions { flex-wrap: wrap; gap: 10px; padding: 8px 0 14px; }
+.actions .fab { width: 52px; height: 52px; }
+.actions .sort-chips { order: 5; margin: 0 !important; width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+.actions .filter { order: 6; width: 100%; margin: 0 !important; }
+.actions .filter input { font-size: 16px; width: 100%; }
+
+/* ---------- media library tab ---------- */
+.lib-actions { margin: -6px 0 12px; gap: 8px; }
+.phone-lib { padding: 0; margin: 0 -8px; overflow: visible; }
+.phone-lib .lib-item { padding: 8px; }
+.phone-lib .lib-item .cv { width: 58px; height: 58px; }
+.phone-lib .lib-item .tt { font-size: 16px; }
+.lib-item:hover { background: none; }
+.lib-item:active { background: var(--hover); }
+
+/* ---------- settings / eq on a narrow screen ---------- */
+.panel { padding: 18px; }
+.setting { flex-wrap: wrap; }
+.setting .range { flex: 1 1 100%; order: 3; }
+.swatches { gap: 10px; }
+.swatch { width: 58px; }
+.eq-wrap { padding: 14px 10px; }
+.eq-bands { grid-template-columns: 34px 6px repeat(10, 1fr); gap: 2px; }
+.eq-band .hz { font-size: 9px; }
+.eq-band .db { font-size: 9px; }
+.chips { flex-wrap: wrap; }
+.dialog { padding: 20px; }
+.field, .dialog input { font-size: 16px; }
+
+/* ---------- mini player ---------- */
+#player {
+  position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; height: 64px; padding: 0 8px 0 8px; gap: 4px;
+  margin: 0 8px 6px; border-radius: 18px; overflow: hidden;
+}
+#player .np { gap: 10px; }
+#player .np-cover { width: 46px; height: 46px; border-radius: 10px; }
+#player .np-title { font-size: 15px; }
+#player .np-artist { font-size: 13px; }
+#npLike { display: none; }
+#player .controls { flex-direction: row; gap: 0; }
+#player .ctrl-btns { gap: 2px; }
+#shuffleBtn, #prevBtn, #repeatBtn { display: none; }
+#playBtn { width: 40px; height: 40px; background: none; color: #fff; box-shadow: none; }
+#playBtn .ic { width: 26px; height: 26px; }
+#nextBtn { width: 40px; height: 40px; color: #fff; }
+#nextBtn .ic { width: 24px; height: 24px; }
+#player .progress { position: absolute; left: 14px; right: 14px; bottom: 0; height: 3px; pointer-events: none; }
+#player .progress span { display: none; }
+#player .progress .slider { height: 3px; }
+#player .progress .slider::before, #player .progress .fill, #player .progress .buf { height: 2px; }
+#player .progress .wf, #player .progress .knob { display: none !important; }
+#player .extras { display: none; }
+
+/* ---------- tab bar ---------- */
+#tabbar {
+  display: grid; grid-template-columns: repeat(5, 1fr); height: calc(var(--tabbar-h) + var(--safe-bottom)); padding-bottom: var(--safe-bottom);
+  background: var(--panel-solid); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border-top: 1px solid var(--glass-border);
+}
+#tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--dim); font-size: 10.5px; font-weight: 600; }
+#tabbar a .ic { width: 25px; height: 25px; }
+#tabbar a.active { color: var(--accent); }
+
+/* ---------- big player: whole screen, controls at the bottom ---------- */
+body.phone.np-mode { grid-template-rows: minmax(0, 1fr) auto 0; }
+body.np-mode #tabbar { display: none; }
+body.np-mode #topbar { background: transparent !important; border: 0; }
+body.np-mode #addTopBtn { display: none; }
+.npx { grid-template-columns: 1fr !important; grid-template-rows: minmax(0, 1fr) auto; padding: calc(52px + var(--safe-top)) 0 0; gap: 0; }
+.npx-stage { border-radius: 0; }
+.npx-meta { left: 22px; right: 22px; bottom: 6px; }
+.npx-meta h1 { font-size: 30px; }
+.npx-meta h1.long { font-size: 24px; }
+.npx-artist { font-size: 17px; }
+.npx-lyrics { display: none !important; }
+.npx.show-ly .npx-stage { display: none; }
+.npx.show-ly { grid-template-rows: minmax(0, 1fr); }
+.npx.show-ly .npx-lyrics { display: flex !important; margin: 0 12px; border-radius: 20px; }
+.npx-lb .ly { font-size: 22px; }
+
+body.np-mode #player {
+  height: auto; grid-template-columns: 1fr; padding: 4px 22px calc(18px + var(--safe-bottom)); margin: 0; border-radius: 0; border: 0;
+  background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; overflow: visible;
+}
+body.np-mode #player .np { display: none; }
+body.np-mode #player .controls { flex-direction: column-reverse; gap: 14px; }
+body.np-mode #player .progress { position: static; height: auto; pointer-events: auto; }
+body.np-mode #player .progress span { display: block; min-width: 38px; font-size: 12px; }
+body.np-mode #player .progress .slider { height: 28px; }
+body.np-mode #player .progress .slider::before, body.np-mode #player .progress .fill, body.np-mode #player .progress .buf { height: 4px; }
+body.np-mode #player .progress .knob { display: block !important; width: 14px; height: 14px; margin-left: -7px; }
+body.np-mode #player .ctrl-btns { width: 100%; justify-content: space-between; }
+body.np-mode #shuffleBtn, body.np-mode #prevBtn, body.np-mode #repeatBtn { display: inline-grid; }
+body.np-mode #shuffleBtn, body.np-mode #repeatBtn { width: 44px; height: 44px; }
+body.np-mode #prevBtn, body.np-mode #nextBtn { width: 56px; height: 56px; color: #fff; }
+body.np-mode #prevBtn .ic, body.np-mode #nextBtn .ic { width: 34px; height: 34px; }
+body.np-mode #playBtn { width: 72px; height: 72px; background: #fff; color: #16352c; box-shadow: 0 8px 28px rgba(0,0,0,.3); }
+body.np-mode #playBtn .ic { width: 32px; height: 32px; }
+body.np-mode #player .extras { display: flex; justify-content: space-around; margin-top: 6px; }
+body.np-mode #muteBtn, body.np-mode #volume, body.np-mode #closePlayerBtn { display: none; }
+body.np-mode #player .extras .icon-btn { width: 44px; height: 44px; }
+body.np-mode #player .extras .icon-btn .ic { width: 22px; height: 22px; }
+
+/* ---------- menus become bottom sheets ---------- */
+#ctxMenu {
+  left: 8px !important; right: 8px; top: auto !important; bottom: calc(8px + var(--safe-bottom)); max-width: none; min-width: 0;
+  max-height: 70vh; overflow-y: auto; padding: 8px; border-radius: 22px; animation: sheet .2s ease-out;
+}
+#ctxMenu button { padding: 13px 12px; font-size: 16px; }
+#ctxMenu .menu-title { font-size: 13px; }
+#ctxMenu .sub-list { max-height: 30vh; }
+@keyframes sheet { from { transform: translateY(30px); opacity: 0; } }
+#toasts { bottom: calc(var(--tabbar-h) + 84px + var(--safe-bottom)); width: calc(100% - 32px); }
+.toast { max-width: 100%; font-size: 14px; }
+.toast.progress { min-width: 260px; text-align: left; }
+.toast.progress .pname { font-size: 12px; color: var(--sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 2px 0 8px; }
+.toast.progress .pbar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.2); overflow: hidden; }
+.toast.progress .pbar > div { height: 100%; background: var(--accent); transition: width .2s; }
+
+/* no hover on touch screens */
+@media (hover: none) {
+  .fab:hover { transform: none !important; }
+  .quick-item:hover, .tcard:hover { background: inherit; }
+}
+
+/* lyrics open as their own screen (♪ button), the visualizer needs Web Audio — which iOS pauses on a locked screen */
+#npLyrToggle, .npx-acts [data-big="viz"] { display: none !important; }
+.npx-stage #viz { display: none; }
+
+/* nothing played yet: no empty mini player */
+body.phone #player:has(.np.idle) { display: none; }
+body.phone:not(.np-mode):has(.np.idle) { grid-template-rows: minmax(0, 1fr) 0 auto; }
+/* big player: controls stay readable over bright covers */
+body.np-mode #player { background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, .28) 60%, rgba(0, 0, 0, .38) 100%); }
+body.np-mode #player .progress .slider::before { background: rgba(255, 255, 255, .38); }
+body.np-mode #player .progress .fill { background: #fff; }
+body.np-mode #player .progress span { color: rgba(255, 255, 255, .85); }
+.npx-meta h1, .npx-artist, .npx-state { text-shadow: 0 1px 12px rgba(0, 0, 0, .35); }
+/* sliders are dragged with a finger, the page must not scroll under it */
+.vslider, .slider, .range { touch-action: none; }
+
+/* fixed rows, so the tab bar stays at the bottom while the mini player is hidden */
+body.phone #layout { grid-row: 1; }
+body.phone #player { grid-row: 2; }
+body.phone #tabbar { grid-row: 3; }
+/* mini player: always the thin line, even when the waveform is ready */
+body.phone:not(.np-mode) #seek.has-wf { height: 3px; }
+body.phone:not(.np-mode) #seek.has-wf::before, body.phone:not(.np-mode) #seek.has-wf .fill, body.phone:not(.np-mode) #seek.has-wf .buf { display: block !important; }
+body.phone:not(.np-mode) #seek .wf { display: none !important; }
+/* big player: the waveform bars of the track */
+body.np-mode #seek.has-wf .wf { display: block !important; }
+body.np-mode #seek.has-wf .knob { display: none !important; }
+body.np-mode #seek.has-wf { height: 36px; }
