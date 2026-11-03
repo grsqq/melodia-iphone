@@ -1,5 +1,5 @@
 'use strict';
-window.MELODIA_VERSION = '1.0.0';
+window.MELODIA_VERSION = '1.0.1';
 /* global jsmediatags */
 // iPhone version: the desktop interface (app.js) talks to window.api. Here api is backed by the
 // phone itself — music, covers and the library live in IndexedDB, added from the Files app.
@@ -96,6 +96,34 @@ function hashBytes(bytes) {
 }
 const AUDIO_RE = /\.(mp3|m4a|aac|flac|wav|ogg|opus|webm|mp4|alac|aiff?)$/i;
 
+// ------------------------------------------------------------ covers
+async function putCover(blob, key) {
+  if (!(await db.get('covers', key))) await db.put('covers', key, blob);
+  return key;
+}
+// A file without a cover inside: the album art is looked up by artist and title in iTunes.
+// Slowed / sped up / remix edits use the original song's cover.
+const norm = (s) => String(s || '').toLowerCase().replace(/\(.*?\)|\[.*?\]/g, ' ').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+async function onlineCover(r) {
+  if (!navigator.onLine || !r.title) return '';
+  const title = cleanTitle(r.title) || r.title, artist = cleanArtist(r.artist);
+  try {
+    const q = encodeURIComponent(`${artist} ${title}`.trim());
+    const res = await fetch(`https://itunes.apple.com/search?term=${q}&entity=song&limit=10`, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return '';
+    const list = (await res.json()).results || [];
+    const nt = norm(title), na = norm(artist);
+    // The artist has to match: a cover of a different song by the same artist is better than a stranger's.
+    const score = (x) => (na && !norm(x.artistName).includes(na) && !na.includes(norm(x.artistName)) ? 100 : 0) + (norm(x.trackName) === nt ? 0 : norm(x.trackName).includes(nt) ? 5 : 20);
+    const best = list.filter((x) => x.artworkUrl100).sort((a, b) => score(a) - score(b))[0];
+    if (!best || score(best) >= 100) return '';
+    const img = await fetch(best.artworkUrl100.replace(/100x100bb/, '600x600bb'), { signal: AbortSignal.timeout(15000) });
+    if (!img.ok) return '';
+    const blob = await img.blob();
+    return blob.size ? putCover(blob, 'it-' + best.trackId) : '';
+  } catch { return ''; }
+}
+
 // ------------------------------------------------------------ lyrics (lrclib.net, needs internet)
 const EDIT = /slowed|sped\s*up|speed\s*up|nightcore|reverb|замедл|ускор/i;
 const cleanTitle = (s) => String(s || '').replace(/\s*[([][^)\]]*(slowed|sped|speed|reverb|nightcore|remix|edit|version|official|audio|video|lyrics?)[^)\]]*[)\]]/gi, '').replace(/\s+-\s+(slowed|sped up).*$/i, '').trim();
@@ -158,40 +186,55 @@ window.api = {
     return true;
   },
   // Files picked in the Files app are copied into the phone's storage for the app.
-  async addFiles(files, known, progress) {
+  // The same file name again with another size (e.g. now with a cover inside) replaces the old copy,
+  // keeping its likes and playlists.
+  async addFiles(files, _known, progress) {
     files = [...files].filter((f) => (f.type || '').startsWith('audio/') || AUDIO_RE.test(f.name));
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-    const added = [];
-    let skipped = 0, failed = 0, full = false;
+    const byName = new Map((await db.entries('tracks')).map(([, v]) => [v.name, v]));
+    const added = [], updated = [];
+    let skipped = 0, failed = 0, full = false, found = 0;
     for (const [i, f] of files.entries()) {
       progress(i, files.length, f.name);
-      if (known.has(`${f.name}|${f.size}`)) { skipped++; continue; }
+      const old = byName.get(f.name);
+      if (old && old.size === f.size) { skipped++; continue; }
       try {
         const tags = await readTags(f);
         const guess = fromFileName(f.name);
         const r = {
-          id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), name: f.name, size: f.size, type: f.type || '',
+          id: old ? old.id : Date.now().toString(36) + Math.random().toString(36).slice(2, 8), name: f.name, size: f.size, type: f.type || '',
           title: fixText(tags.title) || guess.title || f.name, artist: fixText(tags.artist) || guess.artist || '', album: fixText(tags.album),
-          duration: await readDuration(f), added: Date.now() + i, cover: '',
+          duration: await readDuration(f), added: old ? old.added : Date.now() + i, cover: '',
         };
         const pic = tags.picture;
         if (pic && pic.data && pic.data.length) {
           const bytes = Uint8Array.from(pic.data);
-          const key = hashBytes(bytes);
-          if (!(await db.get('covers', key))) await db.put('covers', key, new Blob([bytes], { type: pic.format && pic.format.includes('/') ? pic.format : 'image/jpeg' }));
-          r.cover = key;
-        }
+          r.cover = await putCover(new Blob([bytes], { type: pic.format && pic.format.includes('/') ? pic.format : 'image/jpeg' }), hashBytes(bytes));
+        } else if (old && old.cover) r.cover = old.cover;
+        else if ((r.cover = await onlineCover(r))) found++;
         await db.put('audio', r.id, f);
         await db.put('tracks', r.id, r);
-        known.add(`${f.name}|${f.size}`);
-        added.push(await toTrack(r));
+        byName.set(f.name, r);
+        (old ? updated : added).push(await toTrack(r));
       } catch (e) {
         failed++;
         if (/quota/i.test(e && (e.name + e.message))) { full = true; break; }
       }
     }
     progress(files.length, files.length, '');
-    return { added, skipped, failed, full, notAudio: files.length === 0 };
+    return { added, updated, skipped, failed, full, found, notAudio: files.length === 0 };
+  },
+  // Looks up covers for tracks that have none (needs internet).
+  async findCovers(progress) {
+    const rows = (await db.entries('tracks')).map(([, v]) => v).filter((v) => !v.cover);
+    let found = 0;
+    for (const [i, r] of rows.entries()) {
+      progress(i, rows.length, `${r.artist ? r.artist + ' — ' : ''}${r.title}`);
+      const key = await onlineCover(r);
+      if (key) { r.cover = key; await db.put('tracks', r.id, r); found++; }
+    }
+    progress(rows.length, rows.length, '');
+    return { found, total: rows.length };
   },
   async storage() {
     if (!navigator.storage || !navigator.storage.estimate) return null;

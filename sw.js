@@ -1,7 +1,7 @@
 'use strict';
 // Keeps the app itself on the phone so it opens without internet. The music lives in IndexedDB.
 // Bump VERSION whenever any of the files below change, so phones pick up the update.
-const VERSION = 'melodia-iphone-1';
+const VERSION = 'melodia-iphone-2';
 const FILES = ['./', 'index.html', 'styles.css', 'phone.css', 'app.js', 'shim.js', 'icons.js', 'eq.js', 'jsmediatags.min.js', 'manifest.webmanifest',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable.png', 'icons/apple-touch-icon.png'];
 

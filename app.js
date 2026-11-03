@@ -922,7 +922,9 @@ VIEWS.settings = (el) => {
   el.innerHTML = `<div class="page"><h1 class="page-title">Настройки</h1>
     <div class="panel"><h3>Музыка на телефоне</h3>
       <p>Треки хранятся внутри Melodia и играют без интернета. Сейчас: <b>${tracksWord(allTracks.length)}</b>.<span id="storeInfo"></span></p>
-      <div class="row"><button class="btn green small" data-act="addfiles">${icon('add')}Добавить из «Файлов»</button></div>
+      <div class="row"><button class="btn green small" data-act="addfiles">${icon('add')}Добавить из «Файлов»</button>
+        ${allTracks.some((t) => !t.cover) ? `<button class="btn ghost small" data-act="findcovers">${icon('search')}Найти обложки (${allTracks.filter((t) => !t.cover).length})</button>` : ''}</div>
+      <p class="hint">Обложку Melodia берёт из самого файла. Если её там нет — ищет в интернете по исполнителю и названию (нужен интернет).</p>
       <p class="hint">Добавляй музыку в приложении с иконки на экране «Домой», а не во вкладке Safari — у них разная память. Если удалить иконку, добавленная музыка сотрётся.</p>
     </div>
     <div class="panel"><h3>Оформление</h3>
@@ -1637,10 +1639,13 @@ async function importFiles(files, playlist) {
     if (r.notAudio) { toast('Это не аудиофайлы'); return; }
     await rescan(true);
     if (playlist && r.added.length) addToPlaylist(playlist, r.added.map((t) => byPath.get(t.sid) || t));
-    const parts = [r.added.length ? `Добавлено ${tracksWord(r.added.length)}` : 'Новых треков нет'];
+    const parts = [r.added.length ? `Добавлено ${tracksWord(r.added.length)}` : r.updated.length ? '' : 'Новых треков нет'];
+    if (r.updated.length) parts.push(`обновлено ${tracksWord(r.updated.length)}`);
+    if (r.found) parts.push(`обложки найдены в интернете: ${r.found}`);
     if (r.skipped) parts.push(`${r.skipped} уже были`);
     if (r.failed) parts.push(`${r.failed} не удалось прочитать`);
-    toast(parts.join(' · '), r.added.length ? 'ok' : '');
+    toast(parts.filter(Boolean).join(' · ').replace(/^./, (c) => c.toUpperCase()), r.added.length || r.updated.length ? 'ok' : '');
+    if (player.current && r.updated.some((t) => t.sid === player.current.sid)) updateNowPlaying();
     if (r.full) toast('На телефоне закончилось место для музыки', 'err');
   } catch (e) { toast('Не удалось добавить: ' + e.message, 'err'); } finally { importing = false; }
 }
@@ -1987,6 +1992,18 @@ document.addEventListener('click', async (e) => {
   const ctxNow = currentCtx();
   switch (act.dataset.act) {
     case 'addfiles': pickFiles(ctxNow.startsWith('pl:') ? getPlaylist(ctxNow.slice(3)) : null); break;
+    case 'findcovers': {
+      if (importing) break;
+      if (!navigator.onLine) { toast('Для поиска обложек нужен интернет'); break; }
+      importing = true;
+      try {
+        const r = await api.findCovers(showProgress());
+        await rescan(true);
+        updateNowPlaying();
+        toast(r.found ? `Найдено обложек: ${r.found} из ${r.total}` : 'Обложки не нашлись — этих треков нет в каталоге iTunes', r.found ? 'ok' : '');
+      } catch (e) { toast('Не получилось: ' + e.message, 'err'); } finally { importing = false; }
+      break;
+    }
     case 'newpl': { const n = await prompt2('Новый плейлист', `Мой плейлист № ${lib.playlists.length + 1}`, 'Создать'); if (n) { const p = createPlaylist(n); go('playlist', p.id); } break; }
     case 'rename': { const p = getPlaylist(state.view.arg); if (p) renamePlaylist(p); break; }
     case 'plmenu': {
